@@ -1,0 +1,917 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "name": "Untitled7.ipynb",
+      "provenance": [],
+      "collapsed_sections": [],
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/PrajjwalG/Abeginning/blob/master/ProjectSS\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "1phr5wdeSYbj",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "%reload_ext autoreload\n",
+        "%autoreload 2\n",
+        "%matplotlib inline"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "hU4ATTtcSbtN",
+        "colab_type": "code",
+        "outputId": "2862c207-0d14-4401-b772-94a087e593e1",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 79
+        }
+      },
+      "source": [
+        "from fastai.vision import *\n",
+        "from fastai.metrics import error_rate\n",
+        "import os\n",
+        "import numpy as np\n",
+        "import pandas as pd\n",
+        "import json\n",
+        "from matplotlib import pyplot as plt\n",
+        "from keras.utils.np_utils import to_categorical\n",
+        "\n",
+        "from keras.models import Sequential\n",
+        "from keras.layers.core import Flatten, Dense, Dropout, Lambda\n",
+        "from keras.layers.convolutional import Conv2D, MaxPooling2D\n",
+        "from keras.optimizers import Adam, SGD"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "Using TensorFlow backend.\n"
+          ],
+          "name": "stderr"
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/html": [
+              "<p style=\"color: red;\">\n",
+              "The default version of TensorFlow in Colab will soon switch to TensorFlow 2.x.<br>\n",
+              "We recommend you <a href=\"https://www.tensorflow.org/guide/migrate\" target=\"_blank\">upgrade</a> now \n",
+              "or ensure your notebook will continue to use TensorFlow 1.x via the <code>%tensorflow_version 1.x</code> magic:\n",
+              "<a href=\"https://colab.research.google.com/notebooks/tensorflow_version.ipynb\" target=\"_blank\">more info</a>.</p>\n"
+            ],
+            "text/plain": [
+              "<IPython.core.display.HTML object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "WZRg1YhEOWaR",
+        "colab_type": "code",
+        "outputId": "a16bbace-6c50-4486-fe24-4624a2c7c2b7",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 202
+        }
+      },
+      "source": [
+        "!pip install kaggle\n"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "Requirement already satisfied: kaggle in /usr/local/lib/python3.6/dist-packages (1.5.6)\n",
+            "Requirement already satisfied: urllib3<1.25,>=1.21.1 in /usr/local/lib/python3.6/dist-packages (from kaggle) (1.24.3)\n",
+            "Requirement already satisfied: six>=1.10 in /usr/local/lib/python3.6/dist-packages (from kaggle) (1.12.0)\n",
+            "Requirement already satisfied: requests in /usr/local/lib/python3.6/dist-packages (from kaggle) (2.21.0)\n",
+            "Requirement already satisfied: python-dateutil in /usr/local/lib/python3.6/dist-packages (from kaggle) (2.6.1)\n",
+            "Requirement already satisfied: tqdm in /usr/local/lib/python3.6/dist-packages (from kaggle) (4.28.1)\n",
+            "Requirement already satisfied: certifi in /usr/local/lib/python3.6/dist-packages (from kaggle) (2019.11.28)\n",
+            "Requirement already satisfied: python-slugify in /usr/local/lib/python3.6/dist-packages (from kaggle) (4.0.0)\n",
+            "Requirement already satisfied: chardet<3.1.0,>=3.0.2 in /usr/local/lib/python3.6/dist-packages (from requests->kaggle) (3.0.4)\n",
+            "Requirement already satisfied: idna<2.9,>=2.5 in /usr/local/lib/python3.6/dist-packages (from requests->kaggle) (2.8)\n",
+            "Requirement already satisfied: text-unidecode>=1.3 in /usr/local/lib/python3.6/dist-packages (from python-slugify->kaggle) (1.3)\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "GQoVHwQAPKxe",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "import json\n",
+        "token = {\"username\":\"pingling\",\"key\":\"bb8b02722ccc192a94dcb167d3356106\"}\n",
+        "with open('/content/kaggle.json', 'w') as file:\n",
+        "    json.dump(token, file)"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "Y2M6YhbWrzr8",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "#do not run the next 2 lines of code until the kaggle.json files appear. For the above line of code\n",
+        "#Then run the next 2 lines of code.It will generate an error in both. Run again both the lines it will fix itself"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "l0BE7W6MPp7w",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "!cp /content/kaggle.json ~/.kaggle/kaggle.json\n"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "lPWc_d0LPu8O",
+        "colab_type": "code",
+        "outputId": "427604cf-aa7d-4d8c-9856-570da5988459",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 50
+        }
+      },
+      "source": [
+        "!kaggle config set -n path -v{/content}"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "Warning: Your Kaggle API key is readable by other users on this system! To fix this, you can run 'chmod 600 /root/.kaggle/kaggle.json'\n",
+            "- path is now set to: {/content}\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "vS9vCtQZP3eq",
+        "colab_type": "code",
+        "outputId": "dbf82a0c-aeba-4f81-bb7f-5b4028b9ce96",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 1000
+        }
+      },
+      "source": [
+        "!kaggle competitions download -c airbus-ship-detection -p /content"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "Warning: Your Kaggle API key is readable by other users on this system! To fix this, you can run 'chmod 600 /root/.kaggle/kaggle.json'\n",
+            "Warning: Looks like you're using an outdated API Version, please consider updating (server 1.5.6 / client 1.5.4)\n",
+            "Downloading 00052ed46.jpg to /content\n",
+            "  0% 0.00/303k [00:00<?, ?B/s]\n",
+            "100% 303k/303k [00:00<00:00, 44.5MB/s]\n",
+            "Downloading 000592296.jpg to /content\n",
+            "  0% 0.00/198k [00:00<?, ?B/s]\n",
+            "100% 198k/198k [00:00<00:00, 63.2MB/s]\n",
+            "Downloading 0002756f7.jpg to /content\n",
+            "  0% 0.00/288k [00:00<?, ?B/s]\n",
+            "100% 288k/288k [00:00<00:00, 95.0MB/s]\n",
+            "Downloading 0007b8229.jpg to /content\n",
+            "  0% 0.00/142k [00:00<?, ?B/s]\n",
+            "100% 142k/142k [00:00<00:00, 115MB/s]\n",
+            "Downloading 000805313.jpg to /content\n",
+            "  0% 0.00/253k [00:00<?, ?B/s]\n",
+            "100% 253k/253k [00:00<00:00, 82.3MB/s]\n",
+            "Downloading 0006c52e8.jpg to /content\n",
+            "  0% 0.00/306k [00:00<?, ?B/s]\n",
+            "100% 306k/306k [00:00<00:00, 94.7MB/s]\n",
+            "Downloading 00021ddc3.jpg to /content\n",
+            "  0% 0.00/243k [00:00<?, ?B/s]\n",
+            "100% 243k/243k [00:00<00:00, 78.6MB/s]\n",
+            "Downloading 0001b1832.jpg to /content\n",
+            "  0% 0.00/95.6k [00:00<?, ?B/s]\n",
+            "100% 95.6k/95.6k [00:00<00:00, 30.3MB/s]\n",
+            "Downloading 0001124c7.jpg to /content\n",
+            "  0% 0.00/76.1k [00:00<?, ?B/s]\n",
+            "100% 76.1k/76.1k [00:00<00:00, 78.2MB/s]\n",
+            "Downloading 00031f145.jpg to /content\n",
+            "  0% 0.00/233k [00:00<?, ?B/s]\n",
+            "100% 233k/233k [00:00<00:00, 72.9MB/s]\n",
+            "Downloading 00003e153.jpg to /content\n",
+            "  0% 0.00/129k [00:00<?, ?B/s]\n",
+            "100% 129k/129k [00:00<00:00, 134MB/s]\n",
+            "Downloading 0002d0f32.jpg to /content\n",
+            "  0% 0.00/126k [00:00<?, ?B/s]\n",
+            "100% 126k/126k [00:00<00:00, 110MB/s]\n",
+            "Downloading 000303d4d.jpg to /content\n",
+            "  0% 0.00/206k [00:00<?, ?B/s]\n",
+            "100% 206k/206k [00:00<00:00, 63.9MB/s]\n",
+            "Downloading 00053c6ba.jpg to /content\n",
+            "  0% 0.00/198k [00:00<?, ?B/s]\n",
+            "100% 198k/198k [00:00<00:00, 57.4MB/s]\n",
+            "Downloading 0005d01c8.jpg to /content\n",
+            "  0% 0.00/46.0k [00:00<?, ?B/s]\n",
+            "100% 46.0k/46.0k [00:00<00:00, 41.1MB/s]\n",
+            "Downloading 000194a2d.jpg to /content\n",
+            "  0% 0.00/75.2k [00:00<?, ?B/s]\n",
+            "100% 75.2k/75.2k [00:00<00:00, 77.1MB/s]\n",
+            "Downloading 0005d6d95.jpg to /content\n",
+            "  0% 0.00/97.3k [00:00<?, ?B/s]\n",
+            "100% 97.3k/97.3k [00:00<00:00, 87.7MB/s]\n",
+            "Downloading 00057a50d.jpg to /content\n",
+            "  0% 0.00/110k [00:00<?, ?B/s]\n",
+            "100% 110k/110k [00:00<00:00, 113MB/s]\n",
+            "Downloading 000532683.jpg to /content\n",
+            "  0% 0.00/167k [00:00<?, ?B/s]\n",
+            "100% 167k/167k [00:00<00:00, 171MB/s]\n",
+            "Downloading 000155de5.jpg to /content\n",
+            "  0% 0.00/148k [00:00<?, ?B/s]\n",
+            "100% 148k/148k [00:00<00:00, 119MB/s]\n",
+            "Downloading 0046967a4.jpg to /content\n",
+            "  0% 0.00/143k [00:00<?, ?B/s]\n",
+            "100% 143k/143k [00:00<00:00, 124MB/s]\n",
+            "Downloading 001839c6f.jpg to /content\n",
+            "  0% 0.00/181k [00:00<?, ?B/s]\n",
+            "100% 181k/181k [00:00<00:00, 175MB/s]\n",
+            "Downloading 00015efb6.jpg to /content\n",
+            "  0% 0.00/147k [00:00<?, ?B/s]\n",
+            "100% 147k/147k [00:00<00:00, 151MB/s]\n",
+            "Downloading 002a943bf.jpg to /content\n",
+            "  0% 0.00/161k [00:00<?, ?B/s]\n",
+            "100% 161k/161k [00:00<00:00, 135MB/s]\n",
+            "Downloading 004946ceb.jpg to /content\n",
+            "  0% 0.00/215k [00:00<?, ?B/s]\n",
+            "100% 215k/215k [00:00<00:00, 66.5MB/s]\n",
+            "Downloading 0044e3dda.jpg to /content\n",
+            "  0% 0.00/152k [00:00<?, ?B/s]\n",
+            "100% 152k/152k [00:00<00:00, 84.0MB/s]\n",
+            "Downloading 00023d5fc.jpg to /content\n",
+            "  0% 0.00/144k [00:00<?, ?B/s]\n",
+            "100% 144k/144k [00:00<00:00, 129MB/s]\n",
+            "Downloading 0010551d9.jpg to /content\n",
+            "  0% 0.00/108k [00:00<?, ?B/s]\n",
+            "100% 108k/108k [00:00<00:00, 111MB/s]\n",
+            "Downloading 0035268d9.jpg to /content\n",
+            "  0% 0.00/235k [00:00<?, ?B/s]\n",
+            "100% 235k/235k [00:00<00:00, 77.1MB/s]\n",
+            "Downloading 0047c79fc.jpg to /content\n",
+            "  0% 0.00/146k [00:00<?, ?B/s]\n",
+            "100% 146k/146k [00:00<00:00, 123MB/s]\n",
+            "Downloading 003b58a76.jpg to /content\n",
+            "  0% 0.00/146k [00:00<?, ?B/s]\n",
+            "100% 146k/146k [00:00<00:00, 126MB/s]\n",
+            "Downloading 000f7d875.jpg to /content\n",
+            "  0% 0.00/135k [00:00<?, ?B/s]\n",
+            "100% 135k/135k [00:00<00:00, 121MB/s]\n",
+            "Downloading 0008ca6e9.jpg to /content\n",
+            "  0% 0.00/116k [00:00<?, ?B/s]\n",
+            "100% 116k/116k [00:00<00:00, 98.0MB/s]\n",
+            "Downloading 000367c13.jpg to /content\n",
+            "  0% 0.00/161k [00:00<?, ?B/s]\n",
+            "100% 161k/161k [00:00<00:00, 129MB/s]\n",
+            "Downloading 004751507.jpg to /content\n",
+            "  0% 0.00/109k [00:00<?, ?B/s]\n",
+            "100% 109k/109k [00:00<00:00, 96.5MB/s]\n",
+            "Downloading 00002bd58.jpg to /content\n",
+            "  0% 0.00/128k [00:00<?, ?B/s]\n",
+            "100% 128k/128k [00:00<00:00, 152MB/s]\n",
+            "Downloading 00327b02d.jpg to /content\n",
+            "  0% 0.00/172k [00:00<?, ?B/s]\n",
+            "100% 172k/172k [00:00<00:00, 176MB/s]\n",
+            "Downloading 000bd9dbf.jpg to /content\n",
+            "  0% 0.00/163k [00:00<?, ?B/s]\n",
+            "100% 163k/163k [00:00<00:00, 137MB/s]\n",
+            "Downloading 000a4635f.jpg to /content\n",
+            "  0% 0.00/189k [00:00<?, ?B/s]\n",
+            "100% 189k/189k [00:00<00:00, 192MB/s]\n",
+            "Downloading 00313b166.jpg to /content\n",
+            "  0% 0.00/147k [00:00<?, ?B/s]\n",
+            "100% 147k/147k [00:00<00:00, 131MB/s]\n",
+            "Downloading sample_submission_v2.csv to /content\n",
+            "  0% 0.00/274k [00:00<?, ?B/s]\n",
+            "100% 274k/274k [00:00<00:00, 83.0MB/s]\n",
+            "Downloading train_ship_segmentations_v2.csv.zip to /content\n",
+            " 28% 5.00M/17.9M [00:00<00:00, 42.4MB/s]\n",
+            "100% 17.9M/17.9M [00:00<00:00, 87.0MB/s]\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "yJx8CblVRQoL",
+        "colab_type": "code",
+        "outputId": "259a247d-62ac-44fa-eed3-8a0292ffbd1d",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 50
+        }
+      },
+      "source": [
+        "!unzip \\*.zip"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "Archive:  train_ship_segmentations_v2.csv.zip\n",
+            "  inflating: train_ship_segmentations_v2.csv  \n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "JPxu0iYBRgiD",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# Import the test and train datasets into pandas dataframe\n",
+        "from sklearn.model_selection import train_test_split\n",
+        "df = pd.read_csv('train_ship_segmentations_v2.csv')\n"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "Q03OrzMLR3bp",
+        "colab_type": "code",
+        "outputId": "e2aa1acc-5c3f-4129-f9aa-f4ef58b67b8c",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 195
+        }
+      },
+      "source": [
+        "df.head()"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>ImageId</th>\n",
+              "      <th>EncodedPixels</th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>0</th>\n",
+              "      <td>00003e153.jpg</td>\n",
+              "      <td>NaN</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>1</th>\n",
+              "      <td>0001124c7.jpg</td>\n",
+              "      <td>NaN</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2</th>\n",
+              "      <td>000155de5.jpg</td>\n",
+              "      <td>264661 17 265429 33 266197 33 266965 33 267733...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>3</th>\n",
+              "      <td>000194a2d.jpg</td>\n",
+              "      <td>360486 1 361252 4 362019 5 362785 8 363552 10 ...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>4</th>\n",
+              "      <td>000194a2d.jpg</td>\n",
+              "      <td>51834 9 52602 9 53370 9 54138 9 54906 9 55674 ...</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "         ImageId                                      EncodedPixels\n",
+              "0  00003e153.jpg                                                NaN\n",
+              "1  0001124c7.jpg                                                NaN\n",
+              "2  000155de5.jpg  264661 17 265429 33 266197 33 266965 33 267733...\n",
+              "3  000194a2d.jpg  360486 1 361252 4 362019 5 362785 8 363552 10 ...\n",
+              "4  000194a2d.jpg  51834 9 52602 9 53370 9 54138 9 54906 9 55674 ..."
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 120
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "PY8GCWScyKpf",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "df =df.dropna()"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "c1bS0-mi17dD",
+        "colab_type": "code",
+        "outputId": "d51fe726-887e-48f8-b7e5-a2bf98297393",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 343
+        }
+      },
+      "source": [
+        "df.head(10)"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>ImageId</th>\n",
+              "      <th>EncodedPixels</th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>2</th>\n",
+              "      <td>000155de5.jpg</td>\n",
+              "      <td>264661 17 265429 33 266197 33 266965 33 267733...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>3</th>\n",
+              "      <td>000194a2d.jpg</td>\n",
+              "      <td>360486 1 361252 4 362019 5 362785 8 363552 10 ...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>4</th>\n",
+              "      <td>000194a2d.jpg</td>\n",
+              "      <td>51834 9 52602 9 53370 9 54138 9 54906 9 55674 ...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>5</th>\n",
+              "      <td>000194a2d.jpg</td>\n",
+              "      <td>198320 10 199088 10 199856 10 200624 10 201392...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>6</th>\n",
+              "      <td>000194a2d.jpg</td>\n",
+              "      <td>55683 1 56451 1 57219 1 57987 1 58755 1 59523 ...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>7</th>\n",
+              "      <td>000194a2d.jpg</td>\n",
+              "      <td>254389 9 255157 17 255925 17 256693 17 257461 ...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>9</th>\n",
+              "      <td>00021ddc3.jpg</td>\n",
+              "      <td>108287 1 109054 3 109821 4 110588 5 111356 5 1...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>10</th>\n",
+              "      <td>00021ddc3.jpg</td>\n",
+              "      <td>101361 1 102128 3 102896 4 103663 6 104430 9 1...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>11</th>\n",
+              "      <td>00021ddc3.jpg</td>\n",
+              "      <td>74441 3 75207 5 75975 5 76743 5 77511 5 78280 ...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>12</th>\n",
+              "      <td>00021ddc3.jpg</td>\n",
+              "      <td>74444 4 75212 4 75980 4 76748 4 77517 3 78285 ...</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "          ImageId                                      EncodedPixels\n",
+              "2   000155de5.jpg  264661 17 265429 33 266197 33 266965 33 267733...\n",
+              "3   000194a2d.jpg  360486 1 361252 4 362019 5 362785 8 363552 10 ...\n",
+              "4   000194a2d.jpg  51834 9 52602 9 53370 9 54138 9 54906 9 55674 ...\n",
+              "5   000194a2d.jpg  198320 10 199088 10 199856 10 200624 10 201392...\n",
+              "6   000194a2d.jpg  55683 1 56451 1 57219 1 57987 1 58755 1 59523 ...\n",
+              "7   000194a2d.jpg  254389 9 255157 17 255925 17 256693 17 257461 ...\n",
+              "9   00021ddc3.jpg  108287 1 109054 3 109821 4 110588 5 111356 5 1...\n",
+              "10  00021ddc3.jpg  101361 1 102128 3 102896 4 103663 6 104430 9 1...\n",
+              "11  00021ddc3.jpg  74441 3 75207 5 75975 5 76743 5 77511 5 78280 ...\n",
+              "12  00021ddc3.jpg  74444 4 75212 4 75980 4 76748 4 77517 3 78285 ..."
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 164
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "Bidyv-NvbEGS",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "df_train = pd.DataFrame(df)"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "LCKmUyzf2QFo",
+        "colab_type": "code",
+        "outputId": "8d18c75b-447c-4fc8-eb76-0f7f70ddb98f",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 195
+        }
+      },
+      "source": [
+        "df_train.head()"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>ImageId</th>\n",
+              "      <th>EncodedPixels</th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>2</th>\n",
+              "      <td>000155de5.jpg</td>\n",
+              "      <td>264661 17 265429 33 266197 33 266965 33 267733...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>3</th>\n",
+              "      <td>000194a2d.jpg</td>\n",
+              "      <td>360486 1 361252 4 362019 5 362785 8 363552 10 ...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>4</th>\n",
+              "      <td>000194a2d.jpg</td>\n",
+              "      <td>51834 9 52602 9 53370 9 54138 9 54906 9 55674 ...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>5</th>\n",
+              "      <td>000194a2d.jpg</td>\n",
+              "      <td>198320 10 199088 10 199856 10 200624 10 201392...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>6</th>\n",
+              "      <td>000194a2d.jpg</td>\n",
+              "      <td>55683 1 56451 1 57219 1 57987 1 58755 1 59523 ...</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "         ImageId                                      EncodedPixels\n",
+              "2  000155de5.jpg  264661 17 265429 33 266197 33 266965 33 267733...\n",
+              "3  000194a2d.jpg  360486 1 361252 4 362019 5 362785 8 363552 10 ...\n",
+              "4  000194a2d.jpg  51834 9 52602 9 53370 9 54138 9 54906 9 55674 ...\n",
+              "5  000194a2d.jpg  198320 10 199088 10 199856 10 200624 10 201392...\n",
+              "6  000194a2d.jpg  55683 1 56451 1 57219 1 57987 1 58755 1 59523 ..."
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 166
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "5v5ZkZXj2Wtw",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "df_train.drop([2,3,4,5,6,7,9,10,11,12,13,14,15,16,17,18,19,22,24,25,26,29,30,31,32,48,51,56,60,61,62,63,64,65,66,71,79,89,90,93,99,103,104,105,106,108,115,117],inplace = True)"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "0khEEHssZWnV",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "df_train['EncodedPixels'] = pd.to_numeric(df_train['EncodedPixels'], errors = 'coerce')"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab_type": "code",
+        "id": "R0jxVwU3lq8e",
+        "colab": {}
+      },
+      "source": [
+        "df_train['ImageId'] = pd.to_numeric(df_train['ImageId'], errors = 'coerce')"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "Fkom0Xw5axFx",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "data = np.array(df_train['EncodedPixels']).astype('uint8')\n",
+        "label = np.array(df_train['ImageId']).astype('uint8')"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "Z_An7F5wSDdL",
+        "colab_type": "code",
+        "outputId": "222efc7c-ba22-4622-a919-4c624729973f",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 50
+        }
+      },
+      "source": [
+        "print(data.shape)\n",
+        "print(label.shape)"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "(81675,)\n",
+            "(81675,)\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "RLCMBA8QSDaJ",
+        "colab_type": "code",
+        "outputId": "644fade0-2a46-47ca-89bd-77ab9dc7a28a",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 34
+        }
+      },
+      "source": [
+        "x = data / 255.\n",
+        "x = x.reshape([-1, 3,165,165]).transpose([0,2,3,1])\n",
+        "\n",
+        "print(x.shape)"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "(1, 165, 165, 3)\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "uq__TwYJSDXp",
+        "colab_type": "code",
+        "outputId": "dcbd23f4-bbd5-44b5-e7f6-7c6de98300b2",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 34
+        }
+      },
+      "source": [
+        "y = to_categorical(label, num_classes=2)\n",
+        "\n",
+        "print(y.shape)"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "(81675, 2)\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "J9Zoy7F6tnzE",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "model = Sequential()\n",
+        "model.add(Conv2D(32, (3, 3), padding=\"same\", input_shape=(165, 165, 3), activation='relu'))\n",
+        "model.add(Conv2D(32, (3, 3), activation='relu'))\n",
+        "model.add(MaxPooling2D(pool_size=(2, 2)))\n",
+        "model.add(Dropout(0.2))\n",
+        "\n",
+        "model.add(Conv2D(64, (3, 3), padding=\"same\", activation='relu'))\n",
+        "model.add(Conv2D(64, (3, 3), activation='relu'))\n",
+        "model.add(MaxPooling2D(pool_size=(2, 2)))\n",
+        "#model.add(Dropout(0.2))\n",
+        "\n",
+        "# model.add(Conv2D(128, (3, 3), padding=\"same\", activation='relu'))\n",
+        "# model.add(Conv2D(128, (3, 3), activation='relu'))\n",
+        "# model.add(MaxPooling2D(pool_size=(2, 2)))\n",
+        "# model.add(Dropout(0.2))\n",
+        "\n",
+        "model.add(Flatten())\n",
+        "model.add(Dense(512, activation='relu'))\n",
+        "model.add(Dropout(0.2))\n",
+        "model.add(Dense(2, activation='softmax'))\n",
+        "\n",
+        "model.compile(loss='categorical_crossentropy', optimizer=SGD(lr=0.01, momentum=0.9, nesterov=True), \n",
+        "              metrics=['accuracy'])\n"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "FeaKxpp0vtSH",
+        "colab_type": "code",
+        "outputId": "f8659c41-a558-441c-cf9b-9e3a7bca67ea",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 323
+        }
+      },
+      "source": [
+        "history = model.fit(x, y, batch_size=32, epochs=20, validation_split=0.2)"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "error",
+          "ename": "ValueError",
+          "evalue": "ignored",
+          "traceback": [
+            "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+            "\u001b[0;31mValueError\u001b[0m                                Traceback (most recent call last)",
+            "\u001b[0;32m<ipython-input-212-2a920e445618>\u001b[0m in \u001b[0;36m<module>\u001b[0;34m()\u001b[0m\n\u001b[0;32m----> 1\u001b[0;31m \u001b[0mhistory\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mmodel\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mfit\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mx\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0my\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mbatch_size\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;36m32\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mepochs\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;36m20\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mvalidation_split\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;36m0.2\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m",
+            "\u001b[0;32m/usr/local/lib/python3.6/dist-packages/keras/engine/training.py\u001b[0m in \u001b[0;36mfit\u001b[0;34m(self, x, y, batch_size, epochs, verbose, callbacks, validation_split, validation_data, shuffle, class_weight, sample_weight, initial_epoch, steps_per_epoch, validation_steps, validation_freq, max_queue_size, workers, use_multiprocessing, **kwargs)\u001b[0m\n\u001b[1;32m   1087\u001b[0m             \u001b[0msample_weight\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0msample_weight\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1088\u001b[0m             \u001b[0mclass_weight\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0mclass_weight\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1089\u001b[0;31m             batch_size=batch_size)\n\u001b[0m\u001b[1;32m   1090\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1091\u001b[0m         \u001b[0;31m# Prepare validation data.\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.6/dist-packages/keras/engine/training.py\u001b[0m in \u001b[0;36m_standardize_user_data\u001b[0;34m(self, x, y, sample_weight, class_weight, check_array_lengths, batch_size)\u001b[0m\n\u001b[1;32m    793\u001b[0m                 \u001b[0mfeed_output_shapes\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    794\u001b[0m                 \u001b[0mcheck_batch_axis\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;32mFalse\u001b[0m\u001b[0;34m,\u001b[0m  \u001b[0;31m# Don't enforce the batch size.\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 795\u001b[0;31m                 exception_prefix='target')\n\u001b[0m\u001b[1;32m    796\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    797\u001b[0m             \u001b[0;31m# Generate sample-wise weight values given the `sample_weight` and\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.6/dist-packages/keras/engine/training_utils.py\u001b[0m in \u001b[0;36mstandardize_input_data\u001b[0;34m(data, names, shapes, check_batch_axis, exception_prefix)\u001b[0m\n\u001b[1;32m    129\u001b[0m                         \u001b[0;34m': expected '\u001b[0m \u001b[0;34m+\u001b[0m \u001b[0mnames\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0mi\u001b[0m\u001b[0;34m]\u001b[0m \u001b[0;34m+\u001b[0m \u001b[0;34m' to have '\u001b[0m \u001b[0;34m+\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    130\u001b[0m                         \u001b[0mstr\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mlen\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mshape\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m)\u001b[0m \u001b[0;34m+\u001b[0m \u001b[0;34m' dimensions, but got array '\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 131\u001b[0;31m                         'with shape ' + str(data_shape))\n\u001b[0m\u001b[1;32m    132\u001b[0m                 \u001b[0;32mif\u001b[0m \u001b[0;32mnot\u001b[0m \u001b[0mcheck_batch_axis\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    133\u001b[0m                     \u001b[0mdata_shape\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mdata_shape\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;36m1\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;31mValueError\u001b[0m: Error when checking target: expected dense_20 to have 2 dimensions, but got array with shape (1, 165, 165, 3)"
+          ]
+        }
+      ]
+    }
+  ]
+}
